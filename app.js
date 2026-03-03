@@ -5,44 +5,62 @@ const postModel = require("./models/post")
 const cookieParser = require("cookie-parser")
 const bcrypt = require("bcrypt")
 const jwt = require("jsonwebtoken")
-const multer = require('multer')
 const crypto = require("crypto")
 const path = require("path")
+const upload = require("./config/multerConfig")
 
 
 app.set('view engine', "ejs")
 app.use(express.json())
 app.use(express.urlencoded({extended: true}))
+app.use(express.static(path.join(__dirname, "public")))
 app.use(cookieParser())
 
 
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, './public/images/upload')
-  },
-  filename: function (req, file, cb) {
-    crypto.randomBytes(12, function (err, bytes){
-        const fn = bytes.toString("hex") + path.extname(file.originalname)
-        cb(null, fn)
-    })
-  }
-})
 
-const upload = multer({ storage: storage })
+// first video of multer
+// const storage = multer.diskStorage({
+//   destination: function (req, file, cb) {
+//     cb(null, './public/images/upload')
+//   },
+//   filename: function (req, file, cb) {
+//     crypto.randomBytes(12, function (err, bytes){
+//         const fn = bytes.toString("hex") + path.extname(file.originalname)
+//         cb(null, fn)
+//     })
+//   }
+// })
+
+// const upload = multer({ storage: storage })
 
 
 app.get("/", (req, res) => {
     res.render("index")
 })
 
-// multer
-app.get("/test", (req, res) => {
-    res.render("test")
+
+app.get("/profile/upload", (req, res) => {
+    res.render("profileupload")
 })
 
-app.post("/upload", upload.single("image"), (req, res) => {
-    console.log(req.file)
+
+app.post("/upload", isLoggedIn, upload.single("image"), async (req, res) => {
+    let user = await userModel.findOne({email: req.user.email})
+    user.profilepic = req.file.filename
+    await user.save()
+    res.redirect("/profile")
 })
+
+// I had practiced in the first video of multer
+
+// multer
+// app.get("/test", (req, res) => {
+//     res.render("test")
+// })
+
+// app.post("/upload", upload.single("image"), (req, res) => {
+//     console.log(req.file)
+// })
 // end of multer
 
 app.get("/login", (req, res) => {
